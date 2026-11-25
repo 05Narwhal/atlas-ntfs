@@ -1,6 +1,6 @@
 # atlas-ntfs
 
-<!-- badges -->[![crates.io](https://img.shields.io/crates/v/atlas-ntfs.svg)](https://crates.io/crates/atlas-ntfs) [![docs.rs](https://img.shields.io/docsrs/atlas-ntfs)](https://docs.rs/atlas-ntfs) [![CI](https://github.com/05Narwhal/atlas-ntfs/actions/workflows/ci.yml/badge.svg)](https://github.com/05Narwhal/atlas-ntfs/actions/workflows/ci.yml) ![License](https://img.shields.io/crates/l/atlas-ntfs.svg)
+[![crates.io](https://img.shields.io/crates/v/atlas-ntfs.svg)](https://crates.io/crates/atlas-ntfs) [![docs.rs](https://img.shields.io/docsrs/atlas-ntfs)](https://docs.rs/atlas-ntfs) [![CI](https://github.com/05Narwhal/atlas-ntfs/actions/workflows/ci.yml/badge.svg)](https://github.com/05Narwhal/atlas-ntfs/actions/workflows/ci.yml) ![License](https://img.shields.io/crates/l/atlas-ntfs.svg)
 
 A read-only NTFS reader. It implements `atlas_fs_core::fs::FileSystem`, so a mounted volume lists folders, looks up names, reads
 file content and reports its allocation through the same trait as the other `atlas-*` readers.
