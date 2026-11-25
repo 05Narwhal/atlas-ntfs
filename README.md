@@ -27,7 +27,7 @@ let mut dir = volume.read_dir(volume.root())?;
 
 ```toml
 [dependencies]
-atlas-ntfs = "0.1"
+atlas-ntfs = "26.0.1-a"
 ```
 
 Minimum supported Rust version: 1.88.
