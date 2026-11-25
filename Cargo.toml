@@ -13,7 +13,7 @@ categories = ["filesystem", "parser-implementations"]
 authors = ["Julian A. Loy"]
 
 [dependencies]
-atlas-fs-core = { version = "0.1", path = "X:/Documents/Coding/Projects/Libraries/Rust/atlas-fs-core" }
+atlas-fs-core = { version = "0.1", path = "../atlas-fs-core" }
 
 [dev-dependencies]
 # SHA-256 of file content in the tests that read a real image.
