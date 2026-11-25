@@ -2,26 +2,57 @@
 
 [![crates.io](https://img.shields.io/crates/v/atlas-ntfs.svg)](https://crates.io/crates/atlas-ntfs) [![docs.rs](https://img.shields.io/docsrs/atlas-ntfs)](https://docs.rs/atlas-ntfs) [![CI](https://github.com/05Narwhal/atlas-ntfs/actions/workflows/ci.yml/badge.svg)](https://github.com/05Narwhal/atlas-ntfs/actions/workflows/ci.yml) ![License](https://img.shields.io/crates/l/atlas-ntfs.svg)
 
-A read-only NTFS reader. It implements `atlas_fs_core::fs::FileSystem`, so a mounted volume lists folders, looks up names, reads
-file content and reports its allocation through the same trait as the other `atlas-*` readers.
+**A read-only NTFS reader.**
 
-- MFT records with fixups, attribute lists and extension records, resident and non-resident attributes (run lists with holes).
-- Folders as `$I30` indexes (root node and `INDX` blocks), the `$UpCase` table, DOS names hidden from listings.
-- LZNT1 compressed files, alternate data streams as extended attributes, symbolic links and junctions as stored targets.
-- Read-only: EFS-encrypted files report `Unsupported`; there is no writer.
-- No `unsafe`. Every length, offset and count read from the disk is checked; damage is an error, not a panic.
+`atlas-ntfs` mounts an NTFS volume from any `BlockSource` and implements `atlas_fs_core::fs::FileSystem`, so folders, names, file content, alternate data streams and allocation come through the same trait as every other `atlas-*` reader.
+
+## Features
+
+- **MFT** records with fixups, attribute lists and extension records, resident and non-resident attributes (run lists with holes).
+- Folders as **`$I30` indexes** (the root node and `INDX` blocks), the `$UpCase` table, and DOS (8.3) names hidden from listings.
+- **LZNT1 compressed** files.
+- **Alternate data streams** as extended attributes, named as on Windows (for example `Zone.Identifier`).
+- **Symbolic links and junctions** reported as stored targets and never followed; other reparse points leave the file as it is.
+- Hard links are several index entries naming one record, so they are one node.
+
+## Quick start
 
 ```rust,no_run
+use std::path::Path;
 use std::sync::Arc;
-use atlas_fs_core::fs::FileSystem;
-use atlas_fs_core::io::block::BlockSource;
+
+use atlas_fs_core::fs::{DirBatch, DirProgress, FileSystem};
 use atlas_fs_core::io::file::FileSource;
 
-let source: Arc<dyn BlockSource> = Arc::new(FileSource::open("volume.img".as_ref())?);
+let source = Arc::new(FileSource::open(Path::new("volume.img"))?);
 let volume = atlas_ntfs::mount(source)?;
-let mut dir = volume.read_dir(volume.root())?;
-# Ok::<(), atlas_fs_core::error::Error>(())
+println!("{}", volume.info().name);
+
+let mut stream = volume.read_dir(volume.root())?;
+let mut batch = DirBatch::new();
+while stream.next_batch(&mut batch, 256)? == DirProgress::More {}
+for entry in batch.iter() {
+    println!("{}", entry.name);
+}
 ```
+
+## How it works
+
+`mount` parses the boot sector (`boot`), finds the `$MFT` record (`record`) and builds the stream of the MFT's own data (`runs`); every other record is then read from that stream. Node ids are MFT record numbers and the root is record 5. A listing hides the first 16 records (the metadata files).
+
+Sizes and dates in a listing come from the folder's index entry, like Windows' own listings, and can lag the file; `metadata` reads the file's own record.
+
+## Limits
+
+Read-only: there is no writer. EFS-encrypted files report `Unsupported`.
+
+## Safety and robustness
+
+- **No `unsafe`.** The crate is `#![forbid(unsafe_code)]`.
+- **On-disk bytes are hostile.** Every length, offset and count read from a disk is validated before use. Damage is returned as an error, never a panic, an unchecked index or an unbounded loop.
+- **Lints enforce it.** Clippy's `indexing_slicing`, `arithmetic_side_effects`, `unwrap_used`, `expect_used` and `panic` lints are on for the library code.
+- **Read-only.** Nothing in this crate writes to a disk or image.
+- **Fuzzed.** A `cargo-fuzz` target in `fuzz/` runs the parser on arbitrary bytes.
 
 ## Install
 
@@ -30,7 +61,9 @@ let mut dir = volume.read_dir(volume.root())?;
 atlas-ntfs = "26.0.1-a"
 ```
 
-Minimum supported Rust version: 1.88.
+Versions follow `26.MAJOR.MINOR-STAGE`: the year, the major and minor version, and a stage letter (`a` alpha, `b` beta, `s` stable). Cargo treats a stage suffix as a pre-release, so name the version exactly as above.
+
+Minimum supported Rust version: 1.88 (edition 2024).
 
 ## Licence
 
